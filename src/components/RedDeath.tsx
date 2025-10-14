@@ -7,9 +7,13 @@ import { Download, Upload, Edit, Eye, Trash2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Monitor, HardDrive, Puzzle } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 export const RedDeath = () => {
   const { toast } = useToast();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [isEditMode, setIsEditMode] = useState(false);
   const [data, setData] = useLocalStorage<RedDeathData>("redDeath", {
     programs: [],
@@ -50,8 +54,8 @@ export const RedDeath = () => {
     URL.revokeObjectURL(url);
     
     toast({
-      title: "Exportado com sucesso",
-      description: "Seus dados foram salvos em um arquivo JSON",
+      title: t.redDeath.toast.exportSuccess,
+      description: t.redDeath.toast.exportDescription,
     });
   };
 
@@ -65,13 +69,13 @@ export const RedDeath = () => {
         const imported = JSON.parse(e.target?.result as string);
         setData(imported);
         toast({
-          title: "Importado com sucesso",
-          description: "Seus dados foram carregados",
+          title: t.redDeath.toast.importSuccess,
+          description: t.redDeath.toast.importDescription,
         });
       } catch (error) {
         toast({
-          title: "Erro ao importar",
-          description: "Arquivo inválido",
+          title: t.redDeath.toast.importError,
+          description: t.redDeath.toast.importErrorDescription,
           variant: "destructive",
         });
       }
@@ -81,12 +85,12 @@ export const RedDeath = () => {
   };
 
   const handleClearAll = () => {
-    if (window.confirm("Tem certeza que deseja limpar todas as listas?")) {
+    if (window.confirm(t.redDeath.clearConfirm)) {
       setData({ programs: [], drivers: [], extensions: [] });
       setStatuses([]);
       toast({
-        title: "Listas limpas",
-        description: "Todas as listas foram removidas",
+        title: t.redDeath.toast.clearTitle,
+        description: t.redDeath.toast.clearDescription,
       });
     }
   };
@@ -99,10 +103,10 @@ export const RedDeath = () => {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-primary uppercase tracking-wider mb-2">
-              RED DEATH PROTOCOL
+              {t.redDeath.title}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {totalItems} {totalItems === 1 ? "item" : "itens"} cadastrados
+              {totalItems} {totalItems === 1 ? t.redDeath.itemsCount.singular : t.redDeath.itemsCount.plural}
             </p>
           </div>
 
@@ -113,7 +117,7 @@ export const RedDeath = () => {
               className={isEditMode ? "border-primary text-primary" : ""}
             >
               {isEditMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-              {isEditMode ? "Visualizar" : "Editar"}
+              {isEditMode ? t.redDeath.buttons.view : t.redDeath.buttons.edit}
             </Button>
 
             <Button
@@ -123,7 +127,7 @@ export const RedDeath = () => {
               disabled={totalItems === 0}
             >
               <Download className="h-4 w-4 mr-2" />
-              Exportar
+              {t.redDeath.buttons.export}
             </Button>
 
             <label>
@@ -134,7 +138,7 @@ export const RedDeath = () => {
               >
                 <span>
                   <Upload className="h-4 w-4 mr-2" />
-                  Importar
+                  {t.redDeath.buttons.import}
                 </span>
               </Button>
               <input
@@ -152,7 +156,7 @@ export const RedDeath = () => {
               disabled={totalItems === 0}
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Limpar
+              {t.redDeath.buttons.clear}
             </Button>
           </div>
         </div>
@@ -162,15 +166,15 @@ export const RedDeath = () => {
         <div className="mb-8 p-4 bg-muted/20 rounded border border-muted flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
           <div className="text-sm text-muted-foreground">
-            <p className="font-semibold mb-1">Modo de visualização ativo</p>
-            <p>Clique nos itens para marcar como concluído (✓), ignorado (✗) ou limpar a marcação.</p>
+            <p className="font-semibold mb-1">{t.redDeath.viewModeAlert.title}</p>
+            <p>{t.redDeath.viewModeAlert.description}</p>
           </div>
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
         <ItemList
-          title="Programas"
+          title={t.redDeath.lists.programs}
           items={data.programs}
           statuses={statuses}
           isEditMode={isEditMode}
@@ -181,7 +185,7 @@ export const RedDeath = () => {
         />
 
         <ItemList
-          title="Drivers"
+          title={t.redDeath.lists.drivers}
           items={data.drivers}
           statuses={statuses}
           isEditMode={isEditMode}
@@ -192,7 +196,7 @@ export const RedDeath = () => {
         />
 
         <ItemList
-          title="Extensões"
+          title={t.redDeath.lists.extensions}
           items={data.extensions}
           statuses={statuses}
           isEditMode={isEditMode}

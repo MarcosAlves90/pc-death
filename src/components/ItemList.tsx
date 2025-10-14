@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/translations";
 
 interface ItemListProps {
   title: string;
@@ -28,6 +30,8 @@ export const ItemList = ({
   onStatusChange,
   icon,
 }: ItemListProps) => {
+  const { language } = useLanguage();
+  const t = translations[language];
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
@@ -51,13 +55,13 @@ export const ItemList = ({
       {isEditMode && (
         <div className="mb-6 space-y-3 p-4 bg-muted/20 rounded border border-muted">
           <Input
-            placeholder="Nome do item"
+            placeholder={t.redDeath.form.namePlaceholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="bg-input border-border"
           />
           <Input
-            placeholder="Link para download"
+            placeholder={t.redDeath.form.linkPlaceholder}
             value={link}
             onChange={(e) => setLink(e.target.value)}
             className="bg-input border-border"
@@ -68,14 +72,14 @@ export const ItemList = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-popover border-border z-50">
-                <SelectItem value="HIGH">ALTO</SelectItem>
-                <SelectItem value="MEDIUM">MÉDIO</SelectItem>
-                <SelectItem value="LOW">BAIXO</SelectItem>
+                <SelectItem value="HIGH">{t.redDeath.priorities.HIGH}</SelectItem>
+                <SelectItem value="MEDIUM">{t.redDeath.priorities.MEDIUM}</SelectItem>
+                <SelectItem value="LOW">{t.redDeath.priorities.LOW}</SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleAdd} className="bg-primary hover:bg-primary/80 glow-red">
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar
+              {t.redDeath.buttons.add}
             </Button>
           </div>
         </div>
@@ -84,7 +88,7 @@ export const ItemList = ({
       <div className="space-y-3">
         {items.length === 0 ? (
           <p className="text-muted-foreground text-center py-8 italic">
-            Nenhum item adicionado
+            {t.redDeath.noItems}
           </p>
         ) : (
           items.map((item) => (
