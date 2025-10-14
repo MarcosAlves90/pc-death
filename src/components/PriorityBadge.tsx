@@ -1,16 +1,11 @@
 import { Priority } from "@/types";
 import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "@/hooks/useLanguage";
-import { translations } from "@/lib/translations";
 
 interface PriorityBadgeProps {
   priority: Priority;
 }
 
 export const PriorityBadge = ({ priority }: PriorityBadgeProps) => {
-  const { language } = useLanguage();
-  const t = translations[language];
-
   const getVariant = () => {
     switch (priority) {
       case "HIGH":
@@ -35,7 +30,7 @@ export const PriorityBadge = ({ priority }: PriorityBadgeProps) => {
 
   return (
     <Badge variant={getVariant()} className={`${getColor()} text-xs font-bold`}>
-      {t.redDeath.priorities[priority]}
+      {priority}
     </Badge>
   );
 };
