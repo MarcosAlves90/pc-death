@@ -6,8 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { useDroppable } from "@dnd-kit/core";
 
 interface ItemListProps {
+  id: string;
   title: string;
   items: ListItemType[];
   statuses: ItemStatus[];
@@ -20,6 +22,7 @@ interface ItemListProps {
 }
 
 export const ItemList = ({
+  id,
   title,
   items,
   statuses,
@@ -35,6 +38,10 @@ export const ItemList = ({
   const [priority, setPriority] = useState<Priority>("MEDIUM");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPriority, setFilterPriority] = useState<Priority | "ALL">("ALL");
+
+  const { setNodeRef, isOver } = useDroppable({
+    id: id,
+  });
 
   const handleAdd = () => {
     if (!name.trim()) return;
@@ -57,7 +64,12 @@ export const ItemList = ({
     });
 
   return (
-    <Card className="p-6 bg-card border-border cyber-border">
+    <Card 
+      ref={setNodeRef}
+      className={`p-6 bg-card border-border cyber-border transition-all ${
+        isOver && isEditMode ? "ring-2 ring-primary bg-primary/5" : ""
+      }`}
+    >
       <div className="flex items-center gap-3 mb-6">
         {icon}
         <h3 className="text-xl font-bold text-primary uppercase tracking-wider">{title}</h3>

@@ -1,10 +1,12 @@
 import { ListItem as ListItemType, ItemStatus, Priority } from "@/types";
-import { Check, X, ExternalLink, Trash2, Edit, Save } from "lucide-react";
+import { Check, X, ExternalLink, Trash2, Edit, Save, GripVertical } from "lucide-react";
 import { PriorityBadge } from "./PriorityBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 
 interface ListItemProps {
   item: ListItemType;
@@ -21,6 +23,16 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete, o
   const [editName, setEditName] = useState(item.name);
   const [editLink, setEditLink] = useState(item.link);
   const [editPriority, setEditPriority] = useState<Priority>(item.priority);
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: item.id,
+    disabled: !isEditMode || isEditing,
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const handleSaveEdit = () => {
     if (onEdit && editName.trim()) {
@@ -104,8 +116,24 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete, o
   }
 
   return (
-    <div className={`p-5 rounded-lg border-2 ${getStatusColor()} transition-all duration-300 cyber-border group hover:shadow-lg hover:-translate-y-0.5`}>
+    <div 
+      ref={setNodeRef} 
+      style={style}
+      className={`p-5 rounded-lg border-2 ${getStatusColor()} transition-all duration-300 cyber-border group hover:shadow-lg hover:-translate-y-0.5 ${
+        isDragging ? "cursor-grabbing" : ""
+      }`}
+    >
       <div className="flex items-start gap-4">
+        {isEditMode && !isEditing && (
+          <button
+            {...listeners}
+            {...attributes}
+            className="mt-0.5 flex-shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing transition-colors"
+          >
+            <GripVertical className="h-5 w-5" />
+          </button>
+        )}
+
         {!isEditMode && (
           <button
             onClick={handleStatusClick}

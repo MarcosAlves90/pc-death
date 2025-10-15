@@ -7,16 +7,26 @@ import { Download, Upload, Edit, Eye, Trash2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Monitor, HardDrive, Puzzle } from "lucide-react";
+import { DndContext, DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 
 export const RedDeath = () => {
   const { toast } = useToast();
   const [isEditMode, setIsEditMode] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [data, setData] = useLocalStorage<RedDeathData>("redDeath", {
     programs: [],
     drivers: [],
     extensions: [],
   });
   const [statuses, setStatuses] = useLocalStorage<ItemStatus[]>("redDeathStatuses", []);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -104,120 +114,184 @@ export const RedDeath = () => {
     }
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over || !isEditMode) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Find which list the item is coming from
+    let sourceList: keyof RedDeathData | null = null;
+    let item: ListItem | null = null;
+
+    for (const key of ["programs", "drivers", "extensions"] as const) {
+      const found = data[key].find((i) => i.id === activeId);
+      if (found) {
+        sourceList = key;
+        item = found;
+        break;
+      }
+    }
+
+    if (!item || !sourceList) return;
+
+    // Determine target list
+    let targetList: keyof RedDeathData | null = null;
+    if (overId === "programs" || data.programs.some((i) => i.id === overId)) {
+      targetList = "programs";
+    } else if (overId === "drivers" || data.drivers.some((i) => i.id === overId)) {
+      targetList = "drivers";
+    } else if (overId === "extensions" || data.extensions.some((i) => i.id === overId)) {
+      targetList = "extensions";
+    }
+
+    if (!targetList || sourceList === targetList) return;
+
+    // Move item from source to target
+    const newData = { ...data };
+    newData[sourceList] = newData[sourceList].filter((i) => i.id !== activeId);
+    newData[targetList] = [...newData[targetList], item];
+
+    setData(newData);
+    
+    toast({
+      title: "Item movido",
+      description: `Item movido para ${targetList === "programs" ? "Programas" : targetList === "drivers" ? "Drivers" : "Extensões"}`,
+    });
+  };
+
   const totalItems = data.programs.length + data.drivers.length + data.extensions.length;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <Card className="p-6 mb-8 bg-card/50 border-primary/50 cyber-border">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-primary uppercase tracking-wider mb-2">
-              RED DEATH PROTOCOL
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {totalItems} {totalItems === 1 ? "item" : "itens"} cadastrados
-            </p>
-          </div>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <Card className="p-6 mb-8 bg-card/50 border-primary/50 cyber-border">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-primary uppercase tracking-wider mb-2">
+                RED DEATH PROTOCOL
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {totalItems} {totalItems === 1 ? "item" : "itens"} cadastrados
+              </p>
+            </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditMode(!isEditMode)}
-              className={isEditMode ? "border-primary text-primary" : ""}
-            >
-              {isEditMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-              {isEditMode ? "Visualizar" : "Editar"}
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              className="border-secondary text-secondary hover:bg-secondary/10"
-              disabled={totalItems === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Exportar
-            </Button>
-
-            <label>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
-                className="border-accent text-accent hover:bg-accent/10"
-                asChild
+                onClick={() => setIsEditMode(!isEditMode)}
+                className={isEditMode ? "border-primary text-primary" : ""}
               >
-                <span>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar
-                </span>
+                {isEditMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
+                {isEditMode ? "Visualizar" : "Editar"}
               </Button>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                className="hidden"
-              />
-            </label>
 
-            <Button
-              variant="outline"
-              onClick={handleClearAll}
-              className="border-destructive text-destructive hover:bg-destructive/10"
-              disabled={totalItems === 0}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Limpar
-            </Button>
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                className="border-secondary text-secondary hover:bg-secondary/10"
+                disabled={totalItems === 0}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Exportar
+              </Button>
+
+              <label>
+                <Button
+                  variant="outline"
+                  className="border-accent text-accent hover:bg-accent/10"
+                  asChild
+                >
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  className="hidden"
+                />
+              </label>
+
+              <Button
+                variant="outline"
+                onClick={handleClearAll}
+                className="border-destructive text-destructive hover:bg-destructive/10"
+                disabled={totalItems === 0}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Limpar
+              </Button>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
 
-      {!isEditMode && totalItems > 0 && (
-        <div className="mb-8 p-4 bg-muted/20 rounded border border-muted flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-muted-foreground">
-            <p className="font-semibold mb-1">Modo de visualização ativo</p>
-            <p>Clique nos itens para marcar como concluído (✓), ignorado (✗) ou limpar a marcação.</p>
+        {!isEditMode && totalItems > 0 && (
+          <div className="mb-8 p-4 bg-muted/20 rounded border border-muted flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-secondary flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-semibold mb-1">Modo de visualização ativo</p>
+              <p>Clique nos itens para marcar como concluído (✓), ignorado (✗) ou limpar a marcação.</p>
+            </div>
           </div>
+        )}
+
+        {isEditMode && totalItems > 0 && (
+          <div className="mb-8 p-4 bg-muted/20 rounded border border-muted flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-semibold mb-1">Modo de edição ativo</p>
+              <p>Arraste e solte itens entre grupos para movê-los.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          <ItemList
+            id="programs"
+            title="Programas"
+            items={data.programs}
+            statuses={statuses}
+            isEditMode={isEditMode}
+            onAddItem={(item) => handleAddItem("programs", item)}
+            onDeleteItem={(id) => handleDeleteItem("programs", id)}
+            onEditItem={(id, updates) => handleEditItem("programs", id, updates)}
+            onStatusChange={handleStatusChange}
+            icon={<Monitor className="h-6 w-6 text-primary" />}
+          />
+
+          <ItemList
+            id="drivers"
+            title="Drivers"
+            items={data.drivers}
+            statuses={statuses}
+            isEditMode={isEditMode}
+            onAddItem={(item) => handleAddItem("drivers", item)}
+            onDeleteItem={(id) => handleDeleteItem("drivers", id)}
+            onEditItem={(id, updates) => handleEditItem("drivers", id, updates)}
+            onStatusChange={handleStatusChange}
+            icon={<HardDrive className="h-6 w-6 text-secondary" />}
+          />
+
+          <ItemList
+            id="extensions"
+            title="Extensões"
+            items={data.extensions}
+            statuses={statuses}
+            isEditMode={isEditMode}
+            onAddItem={(item) => handleAddItem("extensions", item)}
+            onDeleteItem={(id) => handleDeleteItem("extensions", id)}
+            onEditItem={(id, updates) => handleEditItem("extensions", id, updates)}
+            onStatusChange={handleStatusChange}
+            icon={<Puzzle className="h-6 w-6 text-accent" />}
+          />
         </div>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <ItemList
-          title="Programas"
-          items={data.programs}
-          statuses={statuses}
-          isEditMode={isEditMode}
-          onAddItem={(item) => handleAddItem("programs", item)}
-          onDeleteItem={(id) => handleDeleteItem("programs", id)}
-          onEditItem={(id, updates) => handleEditItem("programs", id, updates)}
-          onStatusChange={handleStatusChange}
-          icon={<Monitor className="h-6 w-6 text-primary" />}
-        />
-
-        <ItemList
-          title="Drivers"
-          items={data.drivers}
-          statuses={statuses}
-          isEditMode={isEditMode}
-          onAddItem={(item) => handleAddItem("drivers", item)}
-          onDeleteItem={(id) => handleDeleteItem("drivers", id)}
-          onEditItem={(id, updates) => handleEditItem("drivers", id, updates)}
-          onStatusChange={handleStatusChange}
-          icon={<HardDrive className="h-6 w-6 text-secondary" />}
-        />
-
-        <ItemList
-          title="Extensões"
-          items={data.extensions}
-          statuses={statuses}
-          isEditMode={isEditMode}
-          onAddItem={(item) => handleAddItem("extensions", item)}
-          onDeleteItem={(id) => handleDeleteItem("extensions", id)}
-          onEditItem={(id, updates) => handleEditItem("extensions", id, updates)}
-          onStatusChange={handleStatusChange}
-          icon={<Puzzle className="h-6 w-6 text-accent" />}
-        />
       </div>
-    </div>
+    </DndContext>
   );
 };
