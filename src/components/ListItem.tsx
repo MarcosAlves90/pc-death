@@ -38,32 +38,34 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete }:
   };
 
   return (
-    <div className={`p-4 rounded border ${getStatusColor()} transition-all cyber-border group`}>
-      <div className="flex items-start gap-3">
+    <div className={`p-5 rounded-lg border-2 ${getStatusColor()} transition-all duration-300 cyber-border group hover:shadow-lg hover:-translate-y-0.5`}>
+      <div className="flex items-start gap-4">
         {!isEditMode && (
           <button
             onClick={handleStatusClick}
-            className="mt-1 flex-shrink-0 w-6 h-6 border rounded flex items-center justify-center transition-all hover:scale-110"
+            className="mt-0.5 flex-shrink-0 w-7 h-7 border-2 rounded-md flex items-center justify-center transition-all hover:scale-110 hover:shadow-md bg-background/50"
           >
             {currentStatus === "done" && <Check className="h-4 w-4 text-status-done" />}
             {currentStatus === "skip" && <X className="h-4 w-4 text-status-skip" />}
           </button>
         )}
         
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-semibold text-foreground truncate">{item.name}</h4>
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="font-semibold text-foreground text-base">{item.name}</h4>
             <PriorityBadge priority={item.priority} />
           </div>
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-secondary hover:text-secondary/80 flex items-center gap-1 truncate group-hover:glow-cyan transition-all"
-          >
-            <ExternalLink className="h-3 w-3 flex-shrink-0" />
-            <span className="truncate">{item.link}</span>
-          </a>
+          {item.link && (
+            <a
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-secondary hover:text-primary flex items-center gap-1.5 w-fit transition-all hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+              <span className="truncate">{item.link}</span>
+            </a>
+          )}
         </div>
 
         {isEditMode && (
@@ -71,7 +73,7 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete }:
             variant="ghost"
             size="icon"
             onClick={() => onDelete(item.id)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0 transition-all"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
