@@ -3,7 +3,7 @@ import { ListItem } from "./ListItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 
@@ -31,15 +31,28 @@ export const ItemList = ({
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
   const [priority, setPriority] = useState<Priority>("MEDIUM");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterPriority, setFilterPriority] = useState<Priority | "ALL">("ALL");
 
   const handleAdd = () => {
-    if (!name.trim() || !link.trim()) return;
+    if (!name.trim()) return;
     
-    onAddItem({ name: name.trim(), link: link.trim(), priority });
+    onAddItem({ name: name.trim(), link: link.trim() || "", priority });
     setName("");
     setLink("");
     setPriority("MEDIUM");
   };
+
+  const filteredItems = items
+    .filter((item) => {
+      const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesPriority = filterPriority === "ALL" || item.priority === filterPriority;
+      return matchesSearch && matchesPriority;
+    })
+    .sort((a, b) => {
+      const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    });
 
   return (
     <Card className="p-6 bg-card border-border cyber-border">
@@ -57,7 +70,7 @@ export const ItemList = ({
             className="bg-input border-border"
           />
           <Input
-            placeholder="Link para download"
+            placeholder="Link para download (opcional)"
             value={link}
             onChange={(e) => setLink(e.target.value)}
             className="bg-input border-border"
@@ -81,27 +94,49 @@ export const ItemList = ({
         </div>
       )}
 
+      <div className="mb-4 space-y-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 bg-input border-border"
+          />
+        </div>
+        <Select value={filterPriority} onValueChange={(v) => setFilterPriority(v as Priority | "ALL")}>
+          <SelectTrigger className="bg-input border-border">
+            <SelectValue placeholder="Filtrar por prioridade" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover border-border z-50">
+            <SelectItem value="ALL">TODAS</SelectItem>
+            <SelectItem value="HIGH">ALTO</SelectItem>
+            <SelectItem value="MEDIUM">MÉDIO</SelectItem>
+            <SelectItem value="LOW">BAIXO</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="space-y-3">
         {items.length === 0 ? (
           <p className="text-muted-foreground text-center py-8 italic">
             Nenhum item adicionado
           </p>
+        ) : filteredItems.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8 italic">
+            Nenhum item encontrado
+          </p>
         ) : (
-          items
-            .sort((a, b) => {
-              const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-              return priorityOrder[a.priority] - priorityOrder[b.priority];
-            })
-            .map((item) => (
-              <ListItem
-                key={item.id}
-                item={item}
-                status={statuses.find((s) => s.id === item.id)}
-                isEditMode={isEditMode}
-                onStatusChange={onStatusChange}
-                onDelete={onDeleteItem}
-              />
-            ))
+          filteredItems.map((item) => (
+            <ListItem
+              key={item.id}
+              item={item}
+              status={statuses.find((s) => s.id === item.id)}
+              isEditMode={isEditMode}
+              onStatusChange={onStatusChange}
+              onDelete={onDeleteItem}
+            />
+          ))
         )}
       </div>
     </Card>
