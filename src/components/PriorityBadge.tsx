@@ -6,30 +6,19 @@ interface PriorityBadgeProps {
 }
 
 export const PriorityBadge = ({ priority }: PriorityBadgeProps) => {
-  const getVariant = () => {
+  const getStyles = () => {
     switch (priority) {
       case "HIGH":
-        return "default";
+        return "bg-priority-high/20 text-priority-high border-priority-high/50 font-bold";
       case "MEDIUM":
-        return "secondary";
+        return "bg-priority-medium/20 text-priority-medium border-priority-medium/50 font-semibold";
       case "LOW":
-        return "outline";
-    }
-  };
-
-  const getColor = () => {
-    switch (priority) {
-      case "HIGH":
-        return "text-priority-high border-priority-high";
-      case "MEDIUM":
-        return "text-priority-medium border-priority-medium";
-      case "LOW":
-        return "text-priority-low border-priority-low";
+        return "bg-priority-low/20 text-priority-low border-priority-low/50";
     }
   };
 
   return (
-    <Badge variant={getVariant()} className={`${getColor()} text-xs font-bold`}>
+    <Badge variant="outline" className={`${getStyles()} text-xs`}>
       {priority}
     </Badge>
   );

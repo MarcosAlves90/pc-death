@@ -87,16 +87,21 @@ export const ItemList = ({
             Nenhum item adicionado
           </p>
         ) : (
-          items.map((item) => (
-            <ListItem
-              key={item.id}
-              item={item}
-              status={statuses.find((s) => s.id === item.id)}
-              isEditMode={isEditMode}
-              onStatusChange={onStatusChange}
-              onDelete={onDeleteItem}
-            />
-          ))
+          items
+            .sort((a, b) => {
+              const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+              return priorityOrder[a.priority] - priorityOrder[b.priority];
+            })
+            .map((item) => (
+              <ListItem
+                key={item.id}
+                item={item}
+                status={statuses.find((s) => s.id === item.id)}
+                isEditMode={isEditMode}
+                onStatusChange={onStatusChange}
+                onDelete={onDeleteItem}
+              />
+            ))
         )}
       </div>
     </Card>
