@@ -1,7 +1,10 @@
-import { ListItem as ListItemType, ItemStatus } from "@/types";
-import { Check, X, ExternalLink, Trash2 } from "lucide-react";
+import { ListItem as ListItemType, ItemStatus, Priority } from "@/types";
+import { Check, X, ExternalLink, Trash2, Edit, Save } from "lucide-react";
 import { PriorityBadge } from "./PriorityBadge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
 interface ListItemProps {
   item: ListItemType;
@@ -9,10 +12,33 @@ interface ListItemProps {
   isEditMode: boolean;
   onStatusChange: (id: string, status: "none" | "done" | "skip") => void;
   onDelete: (id: string) => void;
+  onEdit?: (id: string, updates: { name: string; link: string; priority: Priority }) => void;
 }
 
-export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete }: ListItemProps) => {
+export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete, onEdit }: ListItemProps) => {
   const currentStatus = status?.status || "none";
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(item.name);
+  const [editLink, setEditLink] = useState(item.link);
+  const [editPriority, setEditPriority] = useState<Priority>(item.priority);
+
+  const handleSaveEdit = () => {
+    if (onEdit && editName.trim()) {
+      onEdit(item.id, { 
+        name: editName.trim(), 
+        link: editLink.trim(), 
+        priority: editPriority 
+      });
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditName(item.name);
+    setEditLink(item.link);
+    setEditPriority(item.priority);
+    setIsEditing(false);
+  };
 
   const getStatusColor = () => {
     switch (currentStatus) {
@@ -37,6 +63,46 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete }:
     onStatusChange(item.id, nextStatus);
   };
 
+  if (isEditing && isEditMode) {
+    return (
+      <div className={`p-5 rounded-lg border-2 ${getStatusColor()} transition-all duration-300 cyber-border bg-muted/10`}>
+        <div className="space-y-3">
+          <Input
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="Nome do item"
+            className="bg-input border-border"
+          />
+          <Input
+            value={editLink}
+            onChange={(e) => setEditLink(e.target.value)}
+            placeholder="Link (opcional)"
+            className="bg-input border-border"
+          />
+          <Select value={editPriority} onValueChange={(v) => setEditPriority(v as Priority)}>
+            <SelectTrigger className="bg-input border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-popover border-border z-50">
+              <SelectItem value="HIGH">ALTO</SelectItem>
+              <SelectItem value="MEDIUM">MÉDIO</SelectItem>
+              <SelectItem value="LOW">BAIXO</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2">
+            <Button onClick={handleSaveEdit} className="bg-primary hover:bg-primary/80 flex-1">
+              <Save className="h-4 w-4 mr-2" />
+              Salvar
+            </Button>
+            <Button onClick={handleCancelEdit} variant="outline" className="flex-1">
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`p-5 rounded-lg border-2 ${getStatusColor()} transition-all duration-300 cyber-border group hover:shadow-lg hover:-translate-y-0.5`}>
       <div className="flex items-start gap-4">
@@ -52,7 +118,7 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete }:
         
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="font-semibold text-foreground text-base">{item.name}</h4>
+            <h4 className="font-semibold text-foreground text-base break-words">{item.name}</h4>
             <PriorityBadge priority={item.priority} />
           </div>
           {item.link && (
@@ -60,23 +126,33 @@ export const ListItem = ({ item, status, isEditMode, onStatusChange, onDelete }:
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-secondary hover:text-primary flex items-center gap-1.5 w-fit transition-all hover:underline"
+              className="text-sm text-secondary hover:text-primary flex items-center gap-1.5 transition-all hover:underline max-w-full"
             >
               <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{item.link}</span>
+              <span className="truncate block">{item.link}</span>
             </a>
           )}
         </div>
 
         {isEditMode && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(item.id)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0 transition-all"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsEditing(true)}
+              className="text-primary hover:text-primary hover:bg-primary/10 transition-all"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(item.id)}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
     </div>

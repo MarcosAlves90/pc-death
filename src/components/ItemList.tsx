@@ -14,6 +14,7 @@ interface ItemListProps {
   isEditMode: boolean;
   onAddItem: (item: Omit<ListItemType, "id">) => void;
   onDeleteItem: (id: string) => void;
+  onEditItem?: (id: string, updates: { name: string; link: string; priority: Priority }) => void;
   onStatusChange: (id: string, status: "none" | "done" | "skip") => void;
   icon: React.ReactNode;
 }
@@ -25,6 +26,7 @@ export const ItemList = ({
   isEditMode,
   onAddItem,
   onDeleteItem,
+  onEditItem,
   onStatusChange,
   icon,
 }: ItemListProps) => {
@@ -135,6 +137,7 @@ export const ItemList = ({
               isEditMode={isEditMode}
               onStatusChange={onStatusChange}
               onDelete={onDeleteItem}
+              onEdit={onEditItem}
             />
           ))
         )}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RedDeathData, ListItem, ItemStatus } from "@/types";
+import { RedDeathData, ListItem, ItemStatus, Priority } from "@/types";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { ItemList } from "./ItemList";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,19 @@ export const RedDeath = () => {
   const handleDeleteItem = (type: keyof RedDeathData, id: string) => {
     setData({ ...data, [type]: data[type].filter((item) => item.id !== id) });
     setStatuses(statuses.filter((s) => s.id !== id));
+  };
+
+  const handleEditItem = (type: keyof RedDeathData, id: string, updates: { name: string; link: string; priority: Priority }) => {
+    setData({
+      ...data,
+      [type]: data[type].map((item) =>
+        item.id === id ? { ...item, ...updates } : item
+      ),
+    });
+    toast({
+      title: "Item atualizado",
+      description: "As alterações foram salvas",
+    });
   };
 
   const handleStatusChange = (id: string, status: "none" | "done" | "skip") => {
@@ -176,6 +189,7 @@ export const RedDeath = () => {
           isEditMode={isEditMode}
           onAddItem={(item) => handleAddItem("programs", item)}
           onDeleteItem={(id) => handleDeleteItem("programs", id)}
+          onEditItem={(id, updates) => handleEditItem("programs", id, updates)}
           onStatusChange={handleStatusChange}
           icon={<Monitor className="h-6 w-6 text-primary" />}
         />
@@ -187,6 +201,7 @@ export const RedDeath = () => {
           isEditMode={isEditMode}
           onAddItem={(item) => handleAddItem("drivers", item)}
           onDeleteItem={(id) => handleDeleteItem("drivers", id)}
+          onEditItem={(id, updates) => handleEditItem("drivers", id, updates)}
           onStatusChange={handleStatusChange}
           icon={<HardDrive className="h-6 w-6 text-secondary" />}
         />
@@ -198,6 +213,7 @@ export const RedDeath = () => {
           isEditMode={isEditMode}
           onAddItem={(item) => handleAddItem("extensions", item)}
           onDeleteItem={(id) => handleDeleteItem("extensions", id)}
+          onEditItem={(id, updates) => handleEditItem("extensions", id, updates)}
           onStatusChange={handleStatusChange}
           icon={<Puzzle className="h-6 w-6 text-accent" />}
         />
