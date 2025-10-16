@@ -12,8 +12,16 @@ export interface ItemStatus {
   status: "none" | "done" | "skip";
 }
 
+export type GroupIconType = "monitor" | "hard-drive" | "puzzle" | "folder" | "package" | "wrench" | "cpu";
+
+export interface ItemGroup {
+  id: string;
+  name: string;
+  iconType: GroupIconType;
+  items: ListItem[];
+  isDefault?: boolean;
+}
+
 export interface RedDeathData {
-  programs: ListItem[];
-  drivers: ListItem[];
-  extensions: ListItem[];
+  groups: ItemGroup[];
 }

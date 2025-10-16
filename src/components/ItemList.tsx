@@ -3,7 +3,7 @@ import { ListItem } from "./ListItem";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useDroppable } from "@dnd-kit/core";
@@ -18,6 +18,7 @@ interface ItemListProps {
   onDeleteItem: (id: string) => void;
   onEditItem?: (id: string, updates: { name: string; link: string; priority: Priority }) => void;
   onStatusChange: (id: string, status: "none" | "done" | "skip") => void;
+  onDeleteGroup?: () => void;
   icon: React.ReactNode;
 }
 
@@ -31,6 +32,7 @@ export const ItemList = ({
   onDeleteItem,
   onEditItem,
   onStatusChange,
+  onDeleteGroup,
   icon,
 }: ItemListProps) => {
   const [name, setName] = useState("");
@@ -70,9 +72,21 @@ export const ItemList = ({
         isOver && isEditMode ? "ring-2 ring-primary bg-primary/5" : ""
       }`}
     >
-      <div className="flex items-center gap-3 mb-6">
-        {icon}
-        <h3 className="text-xl font-bold text-primary uppercase tracking-wider">{title}</h3>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {icon}
+          <h3 className="text-xl font-bold text-primary uppercase tracking-wider">{title}</h3>
+        </div>
+        {onDeleteGroup && isEditMode && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onDeleteGroup}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {isEditMode && (

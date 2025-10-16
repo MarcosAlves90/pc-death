@@ -1,24 +1,85 @@
-import { useState } from "react";
-import { RedDeathData, ListItem, ItemStatus, Priority } from "@/types";
+import { useState, useEffect } from "react";
+import { RedDeathData, ListItem, ItemStatus, Priority, ItemGroup, GroupIconType } from "@/types";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { ItemList } from "./ItemList";
 import { Button } from "@/components/ui/button";
 import { Download, Upload, Edit, Eye, Trash2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { Monitor, HardDrive, Puzzle } from "lucide-react";
-import { DndContext, DragEndEvent, DragOverlay, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { Monitor, HardDrive, Puzzle, Folder, Package, Wrench, Cpu } from "lucide-react";
+import { DndContext, DragEndEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { AddGroupDialog } from "./AddGroupDialog";
+
+const getIconByType = (type: GroupIconType) => {
+  const icons = {
+    monitor: <Monitor className="h-6 w-6" />,
+    "hard-drive": <HardDrive className="h-6 w-6" />,
+    puzzle: <Puzzle className="h-6 w-6" />,
+    folder: <Folder className="h-6 w-6" />,
+    package: <Package className="h-6 w-6" />,
+    wrench: <Wrench className="h-6 w-6" />,
+    cpu: <Cpu className="h-6 w-6" />,
+  };
+  return icons[type];
+};
 
 export const RedDeath = () => {
   const { toast } = useToast();
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [data, setData] = useLocalStorage<RedDeathData>("redDeath", {
-    programs: [],
-    drivers: [],
-    extensions: [],
+    groups: [],
   });
   const [statuses, setStatuses] = useLocalStorage<ItemStatus[]>("redDeathStatuses", []);
+
+  // Migrate old data structure to new structure
+  useEffect(() => {
+    const oldData = localStorage.getItem("redDeath");
+    if (oldData) {
+      try {
+        const parsed = JSON.parse(oldData);
+        if (parsed.programs !== undefined || parsed.drivers !== undefined || parsed.extensions !== undefined) {
+          const migratedData: RedDeathData = {
+            groups: [
+              {
+                id: "programs",
+                name: "Programas",
+                iconType: "monitor",
+                items: parsed.programs || [],
+                isDefault: true,
+              },
+              {
+                id: "drivers",
+                name: "Drivers",
+                iconType: "hard-drive",
+                items: parsed.drivers || [],
+                isDefault: true,
+              },
+              {
+                id: "extensions",
+                name: "Extensões",
+                iconType: "puzzle",
+                items: parsed.extensions || [],
+                isDefault: true,
+              },
+            ],
+          };
+          setData(migratedData);
+        }
+      } catch (e) {
+        console.error("Error migrating data:", e);
+      }
+    } else if (data.groups.length === 0) {
+      // Initialize with default groups if no data exists
+      setData({
+        groups: [
+          { id: "programs", name: "Programas", iconType: "monitor", items: [], isDefault: true },
+          { id: "drivers", name: "Drivers", iconType: "hard-drive", items: [], isDefault: true },
+          { id: "extensions", name: "Extensões", iconType: "puzzle", items: [], isDefault: true },
+        ],
+      });
+    }
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -30,21 +91,68 @@ export const RedDeath = () => {
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
-  const handleAddItem = (type: keyof RedDeathData, item: Omit<ListItem, "id">) => {
-    const newItem = { ...item, id: generateId() };
-    setData({ ...data, [type]: [...data[type], newItem] });
+  const handleAddGroup = (name: string, iconType: GroupIconType) => {
+    const newGroup: ItemGroup = {
+      id: generateId(),
+      name,
+      iconType,
+      items: [],
+      isDefault: false,
+    };
+    setData({ groups: [...data.groups, newGroup] });
+    toast({
+      title: "Grupo criado",
+      description: `O grupo "${name}" foi criado com sucesso`,
+    });
   };
 
-  const handleDeleteItem = (type: keyof RedDeathData, id: string) => {
-    setData({ ...data, [type]: data[type].filter((item) => item.id !== id) });
+  const handleDeleteGroup = (groupId: string) => {
+    const group = data.groups.find((g) => g.id === groupId);
+    if (group?.isDefault) {
+      toast({
+        title: "Erro",
+        description: "Grupos padrão não podem ser deletados",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (window.confirm(`Tem certeza que deseja deletar o grupo "${group?.name}"?`)) {
+      setData({ groups: data.groups.filter((g) => g.id !== groupId) });
+      // Remove statuses for items in deleted group
+      const itemIds = group?.items.map((i) => i.id) || [];
+      setStatuses(statuses.filter((s) => !itemIds.includes(s.id)));
+      toast({
+        title: "Grupo deletado",
+        description: "O grupo foi removido com sucesso",
+      });
+    }
+  };
+
+  const handleAddItem = (groupId: string, item: Omit<ListItem, "id">) => {
+    const newItem = { ...item, id: generateId() };
+    setData({
+      groups: data.groups.map((group) =>
+        group.id === groupId ? { ...group, items: [...group.items, newItem] } : group
+      ),
+    });
+  };
+
+  const handleDeleteItem = (groupId: string, id: string) => {
+    setData({
+      groups: data.groups.map((group) =>
+        group.id === groupId ? { ...group, items: group.items.filter((item) => item.id !== id) } : group
+      ),
+    });
     setStatuses(statuses.filter((s) => s.id !== id));
   };
 
-  const handleEditItem = (type: keyof RedDeathData, id: string, updates: { name: string; link: string; priority: Priority }) => {
+  const handleEditItem = (groupId: string, id: string, updates: { name: string; link: string; priority: Priority }) => {
     setData({
-      ...data,
-      [type]: data[type].map((item) =>
-        item.id === id ? { ...item, ...updates } : item
+      groups: data.groups.map((group) =>
+        group.id === groupId
+          ? { ...group, items: group.items.map((item) => (item.id === id ? { ...item, ...updates } : item)) }
+          : group
       ),
     });
     toast({
@@ -105,7 +213,9 @@ export const RedDeath = () => {
 
   const handleClearAll = () => {
     if (window.confirm("Tem certeza que deseja limpar todas as listas?")) {
-      setData({ programs: [], drivers: [], extensions: [] });
+      setData({
+        groups: data.groups.map((group) => ({ ...group, items: [] })),
+      });
       setStatuses([]);
       toast({
         title: "Listas limpas",
@@ -123,47 +233,52 @@ export const RedDeath = () => {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    // Find which list the item is coming from
-    let sourceList: keyof RedDeathData | null = null;
+    // Find which group the item is coming from
+    let sourceGroup: ItemGroup | null = null;
     let item: ListItem | null = null;
 
-    for (const key of ["programs", "drivers", "extensions"] as const) {
-      const found = data[key].find((i) => i.id === activeId);
+    for (const group of data.groups) {
+      const found = group.items.find((i) => i.id === activeId);
       if (found) {
-        sourceList = key;
+        sourceGroup = group;
         item = found;
         break;
       }
     }
 
-    if (!item || !sourceList) return;
+    if (!item || !sourceGroup) return;
 
-    // Determine target list
-    let targetList: keyof RedDeathData | null = null;
-    if (overId === "programs" || data.programs.some((i) => i.id === overId)) {
-      targetList = "programs";
-    } else if (overId === "drivers" || data.drivers.some((i) => i.id === overId)) {
-      targetList = "drivers";
-    } else if (overId === "extensions" || data.extensions.some((i) => i.id === overId)) {
-      targetList = "extensions";
+    // Determine target group
+    let targetGroup: ItemGroup | null = null;
+    for (const group of data.groups) {
+      if (overId === group.id || group.items.some((i) => i.id === overId)) {
+        targetGroup = group;
+        break;
+      }
     }
 
-    if (!targetList || sourceList === targetList) return;
+    if (!targetGroup || sourceGroup.id === targetGroup.id) return;
 
     // Move item from source to target
-    const newData = { ...data };
-    newData[sourceList] = newData[sourceList].filter((i) => i.id !== activeId);
-    newData[targetList] = [...newData[targetList], item];
+    setData({
+      groups: data.groups.map((group) => {
+        if (group.id === sourceGroup.id) {
+          return { ...group, items: group.items.filter((i) => i.id !== activeId) };
+        }
+        if (group.id === targetGroup.id) {
+          return { ...group, items: [...group.items, item] };
+        }
+        return group;
+      }),
+    });
 
-    setData(newData);
-    
     toast({
       title: "Item movido",
-      description: `Item movido para ${targetList === "programs" ? "Programas" : targetList === "drivers" ? "Drivers" : "Extensões"}`,
+      description: `Item movido para ${targetGroup.name}`,
     });
   };
 
-  const totalItems = data.programs.length + data.drivers.length + data.extensions.length;
+  const totalItems = data.groups.reduce((sum, group) => sum + group.items.length, 0);
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -180,6 +295,8 @@ export const RedDeath = () => {
             </div>
 
             <div className="flex flex-wrap gap-2">
+              <AddGroupDialog onAddGroup={handleAddGroup} />
+
               <Button
                 variant="outline"
                 onClick={() => setIsEditMode(!isEditMode)}
@@ -252,44 +369,22 @@ export const RedDeath = () => {
         )}
 
         <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          <ItemList
-            id="programs"
-            title="Programas"
-            items={data.programs}
-            statuses={statuses}
-            isEditMode={isEditMode}
-            onAddItem={(item) => handleAddItem("programs", item)}
-            onDeleteItem={(id) => handleDeleteItem("programs", id)}
-            onEditItem={(id, updates) => handleEditItem("programs", id, updates)}
-            onStatusChange={handleStatusChange}
-            icon={<Monitor className="h-6 w-6 text-primary" />}
-          />
-
-          <ItemList
-            id="drivers"
-            title="Drivers"
-            items={data.drivers}
-            statuses={statuses}
-            isEditMode={isEditMode}
-            onAddItem={(item) => handleAddItem("drivers", item)}
-            onDeleteItem={(id) => handleDeleteItem("drivers", id)}
-            onEditItem={(id, updates) => handleEditItem("drivers", id, updates)}
-            onStatusChange={handleStatusChange}
-            icon={<HardDrive className="h-6 w-6 text-secondary" />}
-          />
-
-          <ItemList
-            id="extensions"
-            title="Extensões"
-            items={data.extensions}
-            statuses={statuses}
-            isEditMode={isEditMode}
-            onAddItem={(item) => handleAddItem("extensions", item)}
-            onDeleteItem={(id) => handleDeleteItem("extensions", id)}
-            onEditItem={(id, updates) => handleEditItem("extensions", id, updates)}
-            onStatusChange={handleStatusChange}
-            icon={<Puzzle className="h-6 w-6 text-accent" />}
-          />
+          {data.groups.map((group) => (
+            <ItemList
+              key={group.id}
+              id={group.id}
+              title={group.name}
+              items={group.items}
+              statuses={statuses}
+              isEditMode={isEditMode}
+              onAddItem={(item) => handleAddItem(group.id, item)}
+              onDeleteItem={(id) => handleDeleteItem(group.id, id)}
+              onEditItem={(id, updates) => handleEditItem(group.id, id, updates)}
+              onStatusChange={handleStatusChange}
+              onDeleteGroup={!group.isDefault ? () => handleDeleteGroup(group.id) : undefined}
+              icon={getIconByType(group.iconType)}
+            />
+          ))}
         </div>
       </div>
     </DndContext>
