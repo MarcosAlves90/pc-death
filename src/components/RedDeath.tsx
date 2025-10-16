@@ -194,7 +194,40 @@ export const RedDeath = () => {
     reader.onload = (e) => {
       try {
         const imported = JSON.parse(e.target?.result as string);
-        setData(imported);
+        
+        // Check if it's the old format and convert to new format
+        if (imported.programs !== undefined || imported.drivers !== undefined || imported.extensions !== undefined) {
+          const convertedData: RedDeathData = {
+            groups: [
+              {
+                id: "programs",
+                name: "Programas",
+                iconType: "monitor",
+                items: imported.programs || [],
+                isDefault: true,
+              },
+              {
+                id: "drivers",
+                name: "Drivers",
+                iconType: "hard-drive",
+                items: imported.drivers || [],
+                isDefault: true,
+              },
+              {
+                id: "extensions",
+                name: "Extensões",
+                iconType: "puzzle",
+                items: imported.extensions || [],
+                isDefault: true,
+              },
+            ],
+          };
+          setData(convertedData);
+        } else {
+          // New format, use directly
+          setData(imported);
+        }
+        
         toast({
           title: "Importado com sucesso",
           description: "Seus dados foram carregados",
