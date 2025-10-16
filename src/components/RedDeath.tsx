@@ -27,6 +27,7 @@ export const RedDeath = () => {
   const { toast } = useToast();
   const [isEditMode, setIsEditMode] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [data, setData] = useLocalStorage<RedDeathData>("redDeath", {
     groups: [],
   });
@@ -316,70 +317,96 @@ export const RedDeath = () => {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <Card className="p-6 mb-8 bg-card/50 border-primary/50 cyber-border">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-primary uppercase tracking-wider mb-2">
-                RED DEATH PROTOCOL
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {totalItems} {totalItems === 1 ? "item" : "itens"} cadastrados
-              </p>
-            </div>
+        {/* Floating Menu */}
+        <div className="fixed top-20 right-4 z-50">
+          <div className={`transition-all duration-300 ${isMenuOpen ? "translate-x-0" : "translate-x-[calc(100%+1rem)]"}`}>
+            <Card className="p-4 bg-card border-primary/50 cyber-border shadow-2xl max-w-sm">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-bold text-primary uppercase tracking-wider">
+                      MENU DE CONTROLE
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {totalItems} {totalItems === 1 ? "item" : "itens"}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                  >
+                    ✕
+                  </Button>
+                </div>
 
-            <div className="flex flex-wrap gap-2">
-              <AddGroupDialog onAddGroup={handleAddGroup} />
+                <div className="flex flex-col gap-2">
+                  <AddGroupDialog onAddGroup={handleAddGroup} />
 
-              <Button
-                variant="outline"
-                onClick={() => setIsEditMode(!isEditMode)}
-                className={isEditMode ? "border-primary text-primary" : ""}
-              >
-                {isEditMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-                {isEditMode ? "Visualizar" : "Editar"}
-              </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className={`w-full justify-start ${isEditMode ? "border-primary text-primary" : ""}`}
+                  >
+                    {isEditMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
+                    {isEditMode ? "Visualizar" : "Editar"}
+                  </Button>
 
-              <Button
-                variant="outline"
-                onClick={handleExport}
-                className="border-secondary text-secondary hover:bg-secondary/10"
-                disabled={totalItems === 0}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Exportar
-              </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExport}
+                    className="w-full justify-start border-secondary text-secondary hover:bg-secondary/10"
+                    disabled={totalItems === 0}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
 
-              <label>
-                <Button
-                  variant="outline"
-                  className="border-accent text-accent hover:bg-accent/10"
-                  asChild
-                >
-                  <span>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Importar
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImport}
-                  className="hidden"
-                />
-              </label>
+                  <label className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start border-accent text-accent hover:bg-accent/10"
+                      asChild
+                    >
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar
+                      </span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImport}
+                      className="hidden"
+                    />
+                  </label>
 
-              <Button
-                variant="outline"
-                onClick={handleClearAll}
-                className="border-destructive text-destructive hover:bg-destructive/10"
-                disabled={totalItems === 0}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Limpar
-              </Button>
-            </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleClearAll}
+                    className="w-full justify-start border-destructive text-destructive hover:bg-destructive/10"
+                    disabled={totalItems === 0}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+            </Card>
           </div>
-        </Card>
+
+          {/* Toggle Button */}
+          {!isMenuOpen && (
+            <Button
+              onClick={() => setIsMenuOpen(true)}
+              className="absolute right-0 top-0 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+              size="sm"
+            >
+              ☰
+            </Button>
+          )}
+        </div>
 
         {!isEditMode && totalItems > 0 && (
           <div className="mb-8 p-4 bg-muted/20 rounded border border-muted flex items-start gap-3">
