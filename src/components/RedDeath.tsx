@@ -317,17 +317,21 @@ export const RedDeath = () => {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Floating Menu */}
-        <div className="fixed top-20 right-4 z-50">
-          <div className={`transition-all duration-300 ${isMenuOpen ? "translate-x-0" : "translate-x-[calc(100%+1rem)]"}`}>
-            <Card className="p-4 bg-card border-primary/50 cyber-border shadow-2xl max-w-sm">
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between mb-2">
+        {/* Floating Menu - Responsive */}
+        <div className="fixed md:top-20 md:right-4 bottom-4 right-4 md:bottom-auto z-50">
+          <div className={`transition-all duration-300 ${
+            isMenuOpen 
+              ? "translate-x-0 translate-y-0" 
+              : "md:translate-x-[calc(100%+1rem)] translate-y-[calc(100%+1rem)] md:translate-y-0"
+          }`}>
+            <Card className="p-3 md:p-4 bg-card border-primary/50 cyber-border shadow-2xl w-[90vw] max-w-[280px] md:max-w-sm">
+              <div className="flex flex-col gap-2 md:gap-3">
+                <div className="flex items-center justify-between mb-1 md:mb-2">
                   <div>
-                    <h3 className="text-sm font-bold text-primary uppercase tracking-wider">
-                      MENU DE CONTROLE
+                    <h3 className="text-xs md:text-sm font-bold text-primary uppercase tracking-wider">
+                      MENU
                     </h3>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-[10px] md:text-xs text-muted-foreground">
                       {totalItems} {totalItems === 1 ? "item" : "itens"}
                     </p>
                   </div>
@@ -335,42 +339,45 @@ export const RedDeath = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsMenuOpen(false)}
-                    className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
+                    className="h-5 w-5 md:h-6 md:w-6 p-0 text-muted-foreground hover:text-primary"
                   >
                     ✕
                   </Button>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-1.5 md:gap-2">
                   <AddGroupDialog onAddGroup={handleAddGroup} />
 
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={() => setIsEditMode(!isEditMode)}
-                    className={`w-full justify-start ${isEditMode ? "border-primary text-primary" : ""}`}
+                    className={`w-full justify-start text-xs md:text-sm ${isEditMode ? "border-primary text-primary" : ""}`}
                   >
-                    {isEditMode ? <Eye className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
+                    {isEditMode ? <Eye className="h-3 w-3 md:h-4 md:w-4 mr-2" /> : <Edit className="h-3 w-3 md:h-4 md:w-4 mr-2" />}
                     {isEditMode ? "Visualizar" : "Editar"}
                   </Button>
 
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={handleExport}
-                    className="w-full justify-start border-secondary text-secondary hover:bg-secondary/10"
+                    className="w-full justify-start text-xs md:text-sm border-secondary text-secondary hover:bg-secondary/10"
                     disabled={totalItems === 0}
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                     Exportar
                   </Button>
 
                   <label className="w-full">
                     <Button
                       variant="outline"
-                      className="w-full justify-start border-accent text-accent hover:bg-accent/10"
+                      size="sm"
+                      className="w-full justify-start text-xs md:text-sm border-accent text-accent hover:bg-accent/10"
                       asChild
                     >
                       <span>
-                        <Upload className="h-4 w-4 mr-2" />
+                        <Upload className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                         Importar
                       </span>
                     </Button>
@@ -384,11 +391,12 @@ export const RedDeath = () => {
 
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={handleClearAll}
-                    className="w-full justify-start border-destructive text-destructive hover:bg-destructive/10"
+                    className="w-full justify-start text-xs md:text-sm border-destructive text-destructive hover:bg-destructive/10"
                     disabled={totalItems === 0}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                     Limpar
                   </Button>
                 </div>
@@ -396,11 +404,11 @@ export const RedDeath = () => {
             </Card>
           </div>
 
-          {/* Toggle Button */}
+          {/* Toggle Button - Responsive */}
           {!isMenuOpen && (
             <Button
               onClick={() => setIsMenuOpen(true)}
-              className="absolute right-0 top-0 bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg"
               size="sm"
             >
               ☰
